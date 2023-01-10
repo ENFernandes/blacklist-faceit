@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "BlackList",
+    "description": "BlackList dos idiotas",
+    "version": "1.0",
+    "web_accessible_resources": [
+      {
+        "resources": [ "bd.txt" ],
+        "matches": [ "https://www.faceit.com/*" ]
+      }
+    ],
+    "content_scripts": [
+      {
+        "matches": [
+          "https://www.faceit.com/*"
+        ],
+        "js": [
+          "popup.js"
+        ]
+      }
+    ]
+  }
