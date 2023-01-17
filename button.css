@@ -1,18 +1,52 @@
-button{
-height: 30px;
-width: 30px;
-outline: none;
-margin: 10px;
-border: none;
-border-radius: 2px;
-
+*{
+    background-color: black;
+}
+button {
+    height: 30px;
+    width: 170px;
+    outline: none;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    background-color: #ff5500;
+}
+input{
+    margin: 10px;
+    height: 30px;
+    width: 360px;
+    background-color: white;
 }
 
-button.current { 
-
+button.current {
     box-shadow: 0 0 0 2px white,
-    0 0 0 4px black;
+        0 0 0 4px black;
 }
 .red-text {
     color: red;
+}
+
+.divRaw{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.displayNone{
+    display: none;
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    border-top: 5px solid #555;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    margin: 10px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }

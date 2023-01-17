@@ -3,19 +3,24 @@
     "name": "BlackList",
     "description": "BlackList dos idiotas",
     "version": "1.0",
-    "web_accessible_resources": [
-      {
-        "resources": [ "bd.txt" ],
-        "matches": [ "https://www.faceit.com/*" ]
-      }
+    "action":{
+      "default_popup":"popup.html"
+    },
+    "permissions": [
+      "activeTab",
+      "storage"
     ],
     "content_scripts": [
       {
         "matches": [
           "https://www.faceit.com/*"
         ],
+        
         "js": [
           "popup.js"
+        ],
+        "html":[
+          "popup.html"
         ]
       }
     ]
