@@ -125,7 +125,7 @@ function getDivPlayers() {
   let result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
   let node = result.singleNodeValue;
   if (node != null) {
-    let resp = node.classList[1];
+    let resp = node.classList[0];
     return resp;
   }
   return resp;
