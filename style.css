@@ -1,15 +1,26 @@
-*{
-    background-color: black;
-}
-button {
-    height: 30px;
-    width: 170px;
+.btnBlackList,.btnUndo {
     outline: none;
-    border: none;
-    border-radius: 2px;
-    cursor: pointer;
+    white-space: nowrap;
+    box-sizing: border-box;
+    border-radius: 4px;
+    display: inline-flex;
+    width: auto;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    height: 32px;
+    padding: 8px 24px;
+    font-family: Play,sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 16px;
+    text-transform: uppercase;
+    color: #ffffff;
     background-color: #ff5500;
 }
+
 input{
     margin: 10px;
     height: 30px;

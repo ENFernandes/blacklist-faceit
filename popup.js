@@ -1,87 +1,78 @@
 // Create the API endpoint for reading a file
 const apiUrl = `https://blacklist-faceit-service-uat.onrender.com/api`;
 let classDiv = "";
-var idBtnToken = document.getElementById("idBtnToken");
-var idBtnLogin = document.getElementById("idBtnLogin");
 var fileContent;
-var localstorageToken;
+var localstorageUser;
 var blacklist;
+var nameBan;
 
+/*
+Verify if the request is necessary
+*/
 statup();
 
-async function getTokenlocalStorage() {
+async function statup() {
+  debugger
+  await getFaceitIdlocalStorage()
+    .then(async () => {
+      if (!localstorageUser) {
+        debugger
+        await postNicknameUser();
+      }
+    }).then(async () => {
+      await getPlayersBlackList();
+    }).catch(() => {
+      console.log("Algo deu errado");
+    });
+};
 
-  await chrome.storage.local.get(["token"])
-  .then((resp) => {
-    console.log(resp.token);
-    localstorageToken = resp.token;
-    blacklist = getPlayersBlackList().then((resp)=>console.log('then: '+resp)).catch((resp)=>console.log('catch: '+resp));
-  }).catch((resp)=>{
-    console.log(resp);
-  });
+async function postNicknameUser() {
+  var data = document.getElementsByClassName("nickname")[0].innerText;
 
-  if (localstorageToken != null) {
-    
-    console.log(localstorageToken);
-    var btnToken = document.getElementById("idBtnToken") 
-    if(btnToken)
-      btnToken.remove();
-    var inputLogin = document.getElementById("idInputLogin");
-    if(inputLogin){
-      inputLogin.removeAttribute("hidden");
-    console.log(inputLogin);
-    inputLogin.value = localstorageToken;
+  await fetch(apiUrl + '/User', {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json'
     }
-  }
-}
-
-async function getPlayersBlackList() {
-  
-
-  fetch(apiUrl + "/blackListedplayer?token=" + localstorageToken)
-    .then((response) => response)
+  }).then((response) => response) // realmente preciso?
     .then(async (response) => {
-      
       if (response.status == 200) {
-        blacklist = await response.json();
-        return blacklist;
+        var data = await response.json();
+        await setLocalStorage(data)
       }
       else {
         console.log(response.status);
       }
-    }).catch((resp)=>{
+    }).catch((resp) => {
       console.log(resp);
     });
 }
 
-async function addPlayerBlackList(nikiForBan) {
-  if (!localstorageToken) {
-    localstorageToken = getTokenlocalStorage();
-  }
-  else {
-    var data = {
-      nickname: nikiForBan,
-      token: localstorageToken,
-    }
-    fetch(apiUrl + '/blackListedplayer', {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        'Content-Type': 'application/json'
+async function setLocalStorage(data) {
+  await chrome.storage.local.set({ "faceitId": data.faceitId })
+    .then((result) => {
+      console.log("teste: FaceitId-> " + result.faceitId);
+      debugger
+      localstorageUser = result.faceitId;
+    });
+}
+
+async function getFaceitIdlocalStorage() {
+
+  await chrome.storage.local.get(["faceitId"])
+    .then(async (resp) => {
+      console.log("faceitID -> " + resp.faceitId);
+      if (resp.faceitId) {
+        localstorageUser = resp.faceitId;
       }
-    }).then((response) => {
-        console.log(response);
-        if(response.status==200)
-          getPlayersBlackList();
-      }).catch((resp)=>{
-        alert(resp);
-      });
-  }
+    }).catch((resp) => {
+      console.log("catch ao local storage-> " + resp);
+    });
 }
 
 setInterval(() => {
   var SearchSpans = document.querySelectorAll('span');
-  
   if (blacklist) {
     SearchSpans.forEach((e) => {
       blacklist.forEach(function (i) {
@@ -93,32 +84,119 @@ setInterval(() => {
   }
 }, 500);
 
+/**
+ * Verifies that nethods
+*/
+
 setInterval(() => {
   if (classDiv == "") {
     classDiv = getDivPlayers();
   }
-  if (classDiv != "") {
+  else {
     console.log(classDiv);
     var divs = document.querySelectorAll('.' + classDiv);
 
-    divs.forEach((e) => {
-      var element = document.createElement('div');
-      element.classList.add('eMOUnj');
-      element.classList.add('btnBlackList');
-      element.addEventListener("click", async function (e) {
-        var nameBan = e.target.parentElement.innerText.split('\n');
-        fileContent += "," + nameBan[0];
-        console.log(nameBan[0]);
-        await addPlayerBlackList(nameBan[0]);
-      });
-      element.textContent = 'BlackList';
-      var exists = e.getElementsByClassName("btnBlackList");
-      if (exists.length == 0)
-        e.appendChild(element);
+    divs.forEach(async (exitElement) => {
+      nameBan = exitElement.innerText;
+      nameBan = nameBan.split("\n");
+      for (const playerBan of blacklist)  {
+        if (playerBan.nickname === nameBan[0]) {
+          var exists = exitElement.getElementsByClassName("btnBlackList");
+          if (exists.length > 0) {
+            exists[0].remove();
+          }
+
+          var undoElement = document.createElement('div');
+          undoElement.classList.add('btnUndo');
+          undoElement.setAttribute("name", nameBan[0]);
+          undoElement.addEventListener("click", async function (e) {
+            
+            var disBan = e.currentTarget.attributes.name
+            console.log(disBan.nodeValue);
+            debugger
+            await undoPlayerBlackList(disBan.nodeValue);
+          });
+          undoElement.textContent = 'Undo';
+          var exists = exitElement.getElementsByClassName("btnUndo");
+          if (exists.length == 0) {
+            exitElement.appendChild(undoElement);
+          }
+          break;
+        }
+
+        else {
+          var exists = exitElement.getElementsByClassName("btnUndo");
+          if (exists.length > 0) {
+            exists[0].remove();
+          }
+
+          var element = document.createElement('div');
+          element.classList.add('btnBlackList');
+          element.setAttribute("name", nameBan[0]);
+          element.addEventListener("click", async function (e) {
+            debugger
+            var ban = e.currentTarget.attributes.name
+            console.log(ban.nodeValue);
+            debugger
+            await addPlayerBlackList(ban.nodeValue);
+          });
+
+          element.textContent = 'BlackList';
+          var exists = exitElement.getElementsByClassName("btnBlackList");
+          if (exists.length == 0)
+            exitElement.appendChild(element);
+        }
+
+      }
     })
   }
 }, 500);
 
+//Complete
+async function getPlayersBlackList() {
+  fetch(apiUrl + "/Player?userFaceitId=" + localstorageUser)
+    .then((response) => response)
+    .then(async (response) => {
+
+      if (response.status == 200) {
+        blacklist = await response.json();
+      }
+      else {
+        console.log(response.status);
+      }
+    }).catch((response) => {
+      console.log(response);
+    });
+}
+
+//Complete
+async function addPlayerBlackList(nickForBan) {
+  nickForBan = nickForBan.split("\n");
+  if (!localstorageUser) {
+    getFaceitIdlocalStorage();
+  }
+  else {
+    var data = {
+      playerNickname: nickForBan[0],
+      userFaceitId: localstorageUser,
+    }
+    fetch(apiUrl + '/Player', {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then((response) => {
+      console.log(response);
+      if (response.status == 200)
+        getPlayersBlackList();
+    }).catch((response) => {
+      alert(response);
+    });
+  }
+}
+
+//Conplete
 function getDivPlayers() {
   let resp = "";
   let xpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]';
@@ -131,39 +209,28 @@ function getDivPlayers() {
   return resp;
 }
 
-if (idBtnToken) {
-  idBtnToken.addEventListener('click', async () => {
-    document.getElementById("idBtnToken").hidden = true;
-    var divLoader = document.getElementsByClassName("loader");
-    divLoader[0].hidden = false;
-    await fetch(apiUrl + '/user', {
-      method: "POST",
-    })
-      .then((response) => response)
-      .then(async (response) => {
-        if (response.status == 200) {
-          var data = await response.json();
-          alert("Guarda o teu Token: " + data.token)
-          // localStorage.setItem("Token", data.token);
+async function undoPlayerBlackList(undoPlayer) {
+  if (!localstorageUser) {
+    getFaceitIdlocalStorage();
+  }
+  else {
+    var data = {
+      playerNickname: undoPlayer,
+      userFaceitId: localstorageUser,
+    }
+    fetch(apiUrl + '/Player', {
+      method: "PUT",
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then((response) => {
+      console.log(response);
+      if (response.status == 200)
+        getPlayersBlackList();
+    }).catch((response) => {
+      alert(response);
+    });
+  }
 
-          await chrome.storage.local.set({ "token": data.token }).then((result) => {
-            console.log("teste: " + result.token);
-          });
-
-          getTokenlocalStorage();
-        }
-        else {
-          alert(response.status);
-          document.getElementById("idBtnToken").hidden = false;
-        }
-        divLoader[0].hidden = true;
-
-      }).catch((resp)=>{
-        alert(resp);
-      });
-  });
-}
-
-async function statup() {
-  localstorageToken = await getTokenlocalStorage();
 }
