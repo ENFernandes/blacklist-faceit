@@ -12,21 +12,23 @@ Verify if the request is necessary
 statup();
 
 async function statup() {
-    debugger
-    await getFaceitIdlocalStorage();
-    debugger
-    if (!localstorageUser) {
-      debugger
-      await postNicknameUser();
-    }
-    debugger
-    await getPlayersBlackList();
+  debugger
+  await getFaceitIdlocalStorage()
+    .then(async () => {
+      if (!localstorageUser) {
+        debugger
+        await postNicknameUser();
+      }
+    }).then(async () => {
+      await getPlayersBlackList();
+    }).catch(() => {
+      console.log("Algo deu errado");
+    });
 };
 
 async function postNicknameUser() {
-  var data = {
-    nickname: document.getElementsByClassName("nickname").value
-  }
+  var data = document.getElementsByClassName("nickname")[0].innerText;
+
   await fetch(apiUrl + '/User', {
     method: "POST",
     body: JSON.stringify(data),
@@ -64,27 +66,23 @@ async function getFaceitIdlocalStorage() {
       if (resp.faceitId) {
         localstorageUser = resp.faceitId;
       }
-      else {
-        await postNicknameUser()
-      }
-
     }).catch((resp) => {
       console.log("catch ao local storage-> " + resp);
     });
 }
 
-// setInterval(() => {
-//   var SearchSpans = document.querySelectorAll('span');
-//   if (blacklist) {
-//     SearchSpans.forEach((e) => {
-//       blacklist.forEach(function (i) {
-//         if (i.nickname == e.innerText) {
-//           e.style.color = 'red';
-//         }
-//       });
-//     });
-//   }
-// }, 500);
+setInterval(() => {
+  var SearchSpans = document.querySelectorAll('span');
+  if (blacklist) {
+    SearchSpans.forEach((e) => {
+      blacklist.forEach(function (i) {
+        if (i.nickname == e.innerText) {
+          e.style.color = 'red';
+        }
+      });
+    });
+  }
+}, 500);
 
 /**
  * Verifies that nethods
@@ -94,45 +92,62 @@ setInterval(() => {
   if (classDiv == "") {
     classDiv = getDivPlayers();
   }
-  if (classDiv != "") {
+  else {
     console.log(classDiv);
     var divs = document.querySelectorAll('.' + classDiv);
 
-    divs.forEach((e) => {
-      nameBan = e.innerText;
+    divs.forEach(async (exitElement) => {
+      nameBan = exitElement.innerText;
+      nameBan = nameBan.split("\n");
+      for (const playerBan of blacklist)  {
+        if (playerBan.nickname === nameBan[0]) {
+          var exists = exitElement.getElementsByClassName("btnBlackList");
+          if (exists.length > 0) {
+            exists[0].remove();
+          }
 
-      blacklist.forEach((e) => {
-        if (e == nameBan) {
-          var element = document.createElement('div');
-          element.classList.add('btnUndo');
-          element.addEventListener("click", async function (e) {
+          var undoElement = document.createElement('div');
+          undoElement.classList.add('btnUndo');
+          undoElement.setAttribute("name", nameBan[0]);
+          undoElement.addEventListener("click", async function (e) {
+            
+            var disBan = e.currentTarget.attributes.name
+            console.log(disBan.nodeValue);
             debugger
-            console.log(nameBan);
-            debugger
-            await undoPlayerBlackList(nameBan);
+            await undoPlayerBlackList(disBan.nodeValue);
           });
-          element.textContent = 'Undo';
-          var exists = e.getElementsByClassName("btnUndo");
-          if (exists.length == 0)
-            e.appendChild(element);
+          undoElement.textContent = 'Undo';
+          var exists = exitElement.getElementsByClassName("btnUndo");
+          if (exists.length == 0) {
+            exitElement.appendChild(undoElement);
+          }
+          break;
         }
 
         else {
+          var exists = exitElement.getElementsByClassName("btnUndo");
+          if (exists.length > 0) {
+            exists[0].remove();
+          }
+
           var element = document.createElement('div');
           element.classList.add('btnBlackList');
+          element.setAttribute("name", nameBan[0]);
           element.addEventListener("click", async function (e) {
             debugger
-            console.log(nameBan);
+            var ban = e.currentTarget.attributes.name
+            console.log(ban.nodeValue);
             debugger
-            await addPlayerBlackList(nameBan);
+            await addPlayerBlackList(ban.nodeValue);
           });
+
           element.textContent = 'BlackList';
-          var exists = e.getElementsByClassName("btnBlackList");
+          var exists = exitElement.getElementsByClassName("btnBlackList");
           if (exists.length == 0)
-            e.appendChild(element);
+            exitElement.appendChild(element);
         }
 
-      });
+      }
     })
   }
 }, 500);
@@ -156,13 +171,14 @@ async function getPlayersBlackList() {
 
 //Complete
 async function addPlayerBlackList(nickForBan) {
+  nickForBan = nickForBan.split("\n");
   if (!localstorageUser) {
     getFaceitIdlocalStorage();
   }
   else {
     var data = {
-      nickname: nickForBan,
-      token: localstorageUser,
+      playerNickname: nickForBan[0],
+      userFaceitId: localstorageUser,
     }
     fetch(apiUrl + '/Player', {
       method: "POST",
@@ -191,4 +207,30 @@ function getDivPlayers() {
     return resp;
   }
   return resp;
+}
+
+async function undoPlayerBlackList(undoPlayer) {
+  if (!localstorageUser) {
+    getFaceitIdlocalStorage();
+  }
+  else {
+    var data = {
+      playerNickname: undoPlayer,
+      userFaceitId: localstorageUser,
+    }
+    fetch(apiUrl + '/Player', {
+      method: "PUT",
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then((response) => {
+      console.log(response);
+      if (response.status == 200)
+        getPlayersBlackList();
+    }).catch((response) => {
+      alert(response);
+    });
+  }
+
 }

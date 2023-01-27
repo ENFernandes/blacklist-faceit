@@ -12,12 +12,15 @@
     ],
     "content_scripts": [
       {
+        "run_at": "document_end",
         "matches": [
           "https://www.faceit.com/*"
         ],
-        "run_at": "document_end",
         "js": [
           "popup.js"
+        ],
+        "css":[
+          "style.css"
         ]
       }
     ]
