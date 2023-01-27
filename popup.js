@@ -1,99 +1,90 @@
 // Create the API endpoint for reading a file
 const apiUrl = `https://blacklist-faceit-service-uat.onrender.com/api`;
 let classDiv = "";
-var idBtnToken = document.getElementById("idBtnToken");
-var idBtnLogin = document.getElementById("idBtnLogin");
 var fileContent;
 var localstorageUser;
 var blacklist;
+var nameBan;
 
 /*
 Verify if the request is necessary
 */
 statup();
+
 async function statup() {
-  localstorageUser = await getFaceitIdlocalStorage();
-}
-
-/* 
-Refactor the function 
-need call get user method verification status
-*/
-document.onload = async () => {
-  localstorageUser = await getFaceitIdlocalStorage();
-  if (!localstorageUser) {
-
-    await fetch(apiUrl + '/User', {
-      method: "POST",
-    })
-      .then((response) => response)
-      .then(async (response) => {
-        if (response.status == 200) {
-          var data = await response.json();
-          await chrome.storage.local.set({ "faceitId": data.token }).then((result) => {
-            console.log("teste: FaceitId-> " + result.token);
-          });
-
-          getFaceitIdlocalStorage();
-        }
-        else {
-          console.log(response.status);
-        }
-      }).catch((resp) => {
-        console.log(resp);
-      });
-
-  }
+    debugger
+    await getFaceitIdlocalStorage();
+    debugger
+    if (!localstorageUser) {
+      debugger
+      await postNicknameUser();
+    }
+    debugger
+    await getPlayersBlackList();
 };
 
-/**
-  *TODO Refactor this function
-  * -> chrome.storage.local.get(["token"]) === null ? chrome.storage.local.set(["token"])
-*/
-
-async function getFaceitIdlocalStorage() {
-  await chrome.storage.local.get(["faceitId"])
-    .then((resp) => {
-      console.log(resp.token);
-      localstorageUser = resp.token;
-
-      blacklist = getPlayersBlackList()
-        .then((resp) => console.log('then: ' + resp))
-        .catch((resp) => console.log('catch: ' + resp));
-
+async function postNicknameUser() {
+  var data = {
+    nickname: document.getElementsByClassName("nickname").value
+  }
+  await fetch(apiUrl + '/User', {
+    method: "POST",
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then((response) => response) // realmente preciso?
+    .then(async (response) => {
+      if (response.status == 200) {
+        var data = await response.json();
+        await setLocalStorage(data)
+      }
+      else {
+        console.log(response.status);
+      }
     }).catch((resp) => {
       console.log(resp);
     });
-
-  if (localstorageUser != null) {
-    console.log(localstorageUser);
-    var btnToken = document.getElementById("idBtnToken")
-    if (btnToken)
-      btnToken.remove();
-    var inputLogin = document.getElementById("idInputLogin");
-    if (inputLogin) {
-      inputLogin.removeAttribute("hidden");
-      console.log(inputLogin);
-      inputLogin.value = localstorageUser;
-    }
-  }
 }
 
-/**
- * Verifies that methods
-*/
-setInterval(() => {
-  var SearchSpans = document.querySelectorAll('span');
-  if (blacklist) {
-    SearchSpans.forEach((e) => {
-      blacklist.forEach(function (i) {
-        if (i.nickname == e.innerText) {
-          e.style.color = 'red';
-        }
-      });
+async function setLocalStorage(data) {
+  await chrome.storage.local.set({ "faceitId": data.faceitId })
+    .then((result) => {
+      console.log("teste: FaceitId-> " + result.faceitId);
+      debugger
+      localstorageUser = result.faceitId;
     });
-  }
-}, 500);
+}
+
+async function getFaceitIdlocalStorage() {
+
+  await chrome.storage.local.get(["faceitId"])
+    .then(async (resp) => {
+      console.log("faceitID -> " + resp.faceitId);
+      if (resp.faceitId) {
+        localstorageUser = resp.faceitId;
+      }
+      else {
+        await postNicknameUser()
+      }
+
+    }).catch((resp) => {
+      console.log("catch ao local storage-> " + resp);
+    });
+}
+
+// setInterval(() => {
+//   var SearchSpans = document.querySelectorAll('span');
+//   if (blacklist) {
+//     SearchSpans.forEach((e) => {
+//       blacklist.forEach(function (i) {
+//         if (i.nickname == e.innerText) {
+//           e.style.color = 'red';
+//         }
+//       });
+//     });
+//   }
+// }, 500);
 
 /**
  * Verifies that nethods
@@ -108,19 +99,40 @@ setInterval(() => {
     var divs = document.querySelectorAll('.' + classDiv);
 
     divs.forEach((e) => {
-      var element = document.createElement('div');
-      element.classList.add('eMOUnj');
-      element.classList.add('btnBlackList');
-      element.addEventListener("click", async function (e) {
-        var nameBan = e.target.parentElement.innerText.split('\n');
-        fileContent += "," + nameBan[0];
-        console.log(nameBan[0]);
-        await addPlayerBlackList(nameBan[0]);
+      nameBan = e.innerText;
+
+      blacklist.forEach((e) => {
+        if (e == nameBan) {
+          var element = document.createElement('div');
+          element.classList.add('btnUndo');
+          element.addEventListener("click", async function (e) {
+            debugger
+            console.log(nameBan);
+            debugger
+            await undoPlayerBlackList(nameBan);
+          });
+          element.textContent = 'Undo';
+          var exists = e.getElementsByClassName("btnUndo");
+          if (exists.length == 0)
+            e.appendChild(element);
+        }
+
+        else {
+          var element = document.createElement('div');
+          element.classList.add('btnBlackList');
+          element.addEventListener("click", async function (e) {
+            debugger
+            console.log(nameBan);
+            debugger
+            await addPlayerBlackList(nameBan);
+          });
+          element.textContent = 'BlackList';
+          var exists = e.getElementsByClassName("btnBlackList");
+          if (exists.length == 0)
+            e.appendChild(element);
+        }
+
       });
-      element.textContent = 'BlackList';
-      var exists = e.getElementsByClassName("btnBlackList");
-      if (exists.length == 0)
-        e.appendChild(element);
     })
   }
 }, 500);
@@ -133,7 +145,6 @@ async function getPlayersBlackList() {
 
       if (response.status == 200) {
         blacklist = await response.json();
-        return blacklist;
       }
       else {
         console.log(response.status);
@@ -146,7 +157,7 @@ async function getPlayersBlackList() {
 //Complete
 async function addPlayerBlackList(nickForBan) {
   if (!localstorageUser) {
-    localstorageUser = getFaceitIdlocalStorage();
+    getFaceitIdlocalStorage();
   }
   else {
     var data = {

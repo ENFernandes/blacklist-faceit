@@ -1,7 +1,7 @@
 *{
     background-color: black;
 }
-button {
+.btnBlackList {
     height: 30px;
     width: 170px;
     outline: none;
