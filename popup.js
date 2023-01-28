@@ -1,6 +1,11 @@
 // Create the API endpoint for reading a file
 const apiUrl = `https://blacklist-faceit-service-uat.onrender.com/api`;
+const userEndpoint = apiUrl + '/user';
+const playerEndpoint = apiUrl + '/player';
+const playersNamesXpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]';
+
 let classDiv = "";
+
 var fileContent;
 var localstorageUser;
 var blacklist;
@@ -9,9 +14,9 @@ var nameBan;
 /*
 Verify if the request is necessary
 */
-statup();
+startup();
 
-async function statup() {
+async function startup() {
   debugger
   await getFaceitIdlocalStorage()
     .then(async () => {
@@ -27,26 +32,16 @@ async function statup() {
 };
 
 async function postNicknameUser() {
-  var data = document.getElementsByClassName("nickname")[0].innerText;
+  var userNickname;
+  
+  while (userNickname == undefined) {
+    setTimeout(() => {
+      userNickname = document.getElementsByClassName("nickname")[0].innerText;
+    }, 500);
+  }
 
-  await fetch(apiUrl + '/User', {
-    method: "POST",
-    body: JSON.stringify(data),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  }).then((response) => response) // realmente preciso?
-    .then(async (response) => {
-      if (response.status == 200) {
-        var data = await response.json();
-        await setLocalStorage(data)
-      }
-      else {
-        console.log(response.status);
-      }
-    }).catch((resp) => {
-      console.log(resp);
-    });
+  var data = await genericUpsertRequest(userEndpoint, "POST", userNickname);
+  await setLocalStorage(data);
 }
 
 async function setLocalStorage(data) {
@@ -59,15 +54,14 @@ async function setLocalStorage(data) {
 }
 
 async function getFaceitIdlocalStorage() {
-
   await chrome.storage.local.get(["faceitId"])
     .then(async (resp) => {
       console.log("faceitID -> " + resp.faceitId);
       if (resp.faceitId) {
         localstorageUser = resp.faceitId;
       }
-    }).catch((resp) => {
-      console.log("catch ao local storage-> " + resp);
+    }).catch(error => {
+      console.log("catch ao local storage-> " + error);
     });
 }
 
@@ -154,19 +148,8 @@ setInterval(() => {
 
 //Complete
 async function getPlayersBlackList() {
-  fetch(apiUrl + "/Player?userFaceitId=" + localstorageUser)
-    .then((response) => response)
-    .then(async (response) => {
-
-      if (response.status == 200) {
-        blacklist = await response.json();
-      }
-      else {
-        console.log(response.status);
-      }
-    }).catch((response) => {
-      console.log(response);
-    });
+  let url = playerEndpoint + "?userFaceitId=" + localstorageUser;
+  blacklist = await genericGetRequest(url);
 }
 
 //Complete
@@ -180,27 +163,15 @@ async function addPlayerBlackList(nickForBan) {
       playerNickname: nickForBan[0],
       userFaceitId: localstorageUser,
     }
-    fetch(apiUrl + '/Player', {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then((response) => {
-      console.log(response);
-      if (response.status == 200)
-        getPlayersBlackList();
-    }).catch((response) => {
-      alert(response);
-    });
+
+    await genericUpsertRequest(playerEndpoint, "POST", data);
+    getPlayersBlackList();
   }
 }
 
 //Conplete
 function getDivPlayers() {
-  let resp = "";
-  let xpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]';
-  let result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+  let result = document.evaluate(playersNamesXpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
   let node = result.singleNodeValue;
   if (node != null) {
     let resp = node.classList[0];
@@ -218,19 +189,47 @@ async function undoPlayerBlackList(undoPlayer) {
       playerNickname: undoPlayer,
       userFaceitId: localstorageUser,
     }
-    fetch(apiUrl + '/Player', {
-      method: "PUT",
-      body: JSON.stringify(data),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then((response) => {
-      console.log(response);
-      if (response.status == 200)
-        getPlayersBlackList();
-    }).catch((response) => {
-      alert(response);
-    });
-  }
 
+    await genericUpsertRequest(playerEndpoint, "PUT", data);
+    getPlayersBlackList();
+  }
+}
+
+
+
+/** Generic Http Requests */
+
+async function genericUpsertRequest(url, method, data) {
+  await fetch(url, {
+    method: method,
+    body: JSON.stringify(data),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then((response) => response) // realmente preciso?
+    .then(async (response) => {
+      if (response.status == 200) {
+        return await response.json();
+      }
+      else {
+        console.log(response.status);
+      }
+    }).catch(error => {
+      console.log(error);
+    });
+}
+
+async function genericGetRequest(url) {
+  await fetch(url)
+    .then((response) => response)
+    .then(async (response) => {
+      if (response.status == 200) {
+        return await response.json();
+      }
+      else {
+        console.log(response.status);
+      }
+    }).catch(error => {
+      console.log(error);
+    });
 }
