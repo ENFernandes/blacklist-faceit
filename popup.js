@@ -6,15 +6,26 @@ const playersNamesXpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/a
 
 let classDiv = "";
 
+var start;
 var fileContent;
 var localstorageUser;
+var userId;
 var blacklist;
 var nameBan;
 
 /*
 Verify if the request is necessary
 */
-startup();
+
+
+start = setInterval(() => {
+  let url = window.document.URL;
+  if (url === "https://www.faceit.com/pt/clan/61395179-2483-49c9-a9b2-dd251a5ca0e0/SAW%20Gaming%20League%20-%20Comunidade%20Portuguesa%20de%20CS:GO") {
+    startup()
+    clearInterval(start);
+  }
+}, 10000);
+
 
 async function startup() {
   debugger
@@ -24,7 +35,9 @@ async function startup() {
         debugger
         await postNicknameUser();
       }
-    }).then(async () => {
+    }).then(async (data) => {
+      console.log(data);
+      debugger;
       await getPlayersBlackList();
     }).catch(() => {
       console.log("Algo deu errado");
@@ -32,25 +45,15 @@ async function startup() {
 };
 
 async function postNicknameUser() {
-  var userNickname;
-  
-  while (userNickname == undefined) {
-    setTimeout(() => {
-      userNickname = document.getElementsByClassName("nickname")[0].innerText;
-    }, 500);
-  }
 
-  var data = await genericUpsertRequest(userEndpoint, "POST", userNickname);
-  await setLocalStorage(data);
+  var userNickname = document.getElementsByClassName("nickname")[0].innerText;
+  localstorageUser = genericUpsertRequest(userEndpoint, "POST", userNickname);
+  userId = await localstorageUser;
+
 }
 
 async function setLocalStorage(data) {
-  await chrome.storage.local.set({ "faceitId": data.faceitId })
-    .then((result) => {
-      console.log("teste: FaceitId-> " + result.faceitId);
-      debugger
-      localstorageUser = result.faceitId;
-    });
+  chrome.storage.local.set({ "faceitId": data.faceitId })
 }
 
 async function getFaceitIdlocalStorage() {
@@ -58,7 +61,7 @@ async function getFaceitIdlocalStorage() {
     .then(async (resp) => {
       console.log("faceitID -> " + resp.faceitId);
       if (resp.faceitId) {
-        localstorageUser = resp.faceitId;
+        userId = resp.faceitId;
       }
     }).catch(error => {
       console.log("catch ao local storage-> " + error);
@@ -69,14 +72,24 @@ setInterval(() => {
   var SearchSpans = document.querySelectorAll('span');
   if (blacklist) {
     SearchSpans.forEach((e) => {
-      blacklist.forEach(function (i) {
-        if (i.nickname == e.innerText) {
-          e.style.color = 'red';
+      if (blacklist.length == 0) {
+        e.style.color = 'white';
+      }
+      else {
+        for (const i of blacklist) {
+          if (i.nickname == e.innerText) {
+            e.style.color = 'red';
+            break;
+          }
+          else {
+            e.style.color = 'white';
+          }
         }
-      });
+      }
     });
   }
 }, 500);
+
 
 /**
  * Verifies that nethods
@@ -93,54 +106,80 @@ setInterval(() => {
     divs.forEach(async (exitElement) => {
       nameBan = exitElement.innerText;
       nameBan = nameBan.split("\n");
-      for (const playerBan of blacklist)  {
-        if (playerBan.nickname === nameBan[0]) {
-          var exists = exitElement.getElementsByClassName("btnBlackList");
-          if (exists.length > 0) {
-            exists[0].remove();
-          }
-
-          var undoElement = document.createElement('div');
-          undoElement.classList.add('btnUndo');
-          undoElement.setAttribute("name", nameBan[0]);
-          undoElement.addEventListener("click", async function (e) {
-            
-            var disBan = e.currentTarget.attributes.name
-            console.log(disBan.nodeValue);
-            debugger
-            await undoPlayerBlackList(disBan.nodeValue);
-          });
-          undoElement.textContent = 'Undo';
-          var exists = exitElement.getElementsByClassName("btnUndo");
-          if (exists.length == 0) {
-            exitElement.appendChild(undoElement);
-          }
-          break;
+      if (!blacklist) {
+        console.log("Ainda nao tens Blacklist ativa")
+      }
+      else if (blacklist.length == 0) {
+        var exists = exitElement.getElementsByClassName("btnUndo");
+        if (exists.length > 0) {
+          exists[0].remove();
         }
+        var element = document.createElement('div');
+        element.classList.add('btnBlackList');
+        element.setAttribute("name", nameBan[0]);
+        element.addEventListener("click", async function (e) {
+          debugger
+          var ban = e.currentTarget.attributes.name
+          console.log(ban.nodeValue);
+          debugger
+          await addPlayerBlackList(ban.nodeValue);
+        });
 
-        else {
-          var exists = exitElement.getElementsByClassName("btnUndo");
-          if (exists.length > 0) {
-            exists[0].remove();
+        element.textContent = 'BlackList';
+        var exists = exitElement.getElementsByClassName("btnBlackList");
+        if (exists.length == 0)
+          exitElement.appendChild(element);
+      }
+      else {
+        for (const playerBan of blacklist) {
+          if (playerBan.nickname === nameBan[0]) {
+            var exists = exitElement.getElementsByClassName("btnBlackList");
+            if (exists.length > 0) {
+              exists[0].remove();
+            }
+
+            var undoElement = document.createElement('div');
+            undoElement.classList.add('btnUndo');
+            undoElement.setAttribute("name", nameBan[0]);
+            undoElement.addEventListener("click", async function (e) {
+
+              var disBan = e.currentTarget.attributes.name
+              console.log(disBan.nodeValue);
+              debugger
+              await undoPlayerBlackList(disBan.nodeValue);
+            });
+            undoElement.textContent = 'Undo';
+            var exists = exitElement.getElementsByClassName("btnUndo");
+            if (exists.length == 0) {
+              exitElement.appendChild(undoElement);
+            }
+            break;
           }
 
-          var element = document.createElement('div');
-          element.classList.add('btnBlackList');
-          element.setAttribute("name", nameBan[0]);
-          element.addEventListener("click", async function (e) {
-            debugger
-            var ban = e.currentTarget.attributes.name
-            console.log(ban.nodeValue);
-            debugger
-            await addPlayerBlackList(ban.nodeValue);
-          });
+          else {
+            var exists = exitElement.getElementsByClassName("btnUndo");
+            if (exists.length > 0) {
+              exists[0].remove();
+            }
 
-          element.textContent = 'BlackList';
-          var exists = exitElement.getElementsByClassName("btnBlackList");
-          if (exists.length == 0)
-            exitElement.appendChild(element);
+            var element = document.createElement('div');
+            element.classList.add('btnBlackList');
+            element.setAttribute("name", nameBan[0]);
+            element.addEventListener("click", async function (e) {
+              debugger
+              var ban = e.currentTarget.attributes.name
+              console.log(ban.nodeValue);
+              debugger
+              await addPlayerBlackList(ban.nodeValue);
+            });
+
+            element.textContent = 'BlackList';
+            var exists = exitElement.getElementsByClassName("btnBlackList");
+            if (exists.length == 0)
+              exitElement.appendChild(element);
+          }
+
         }
-
       }
     })
   }
@@ -148,20 +187,25 @@ setInterval(() => {
 
 //Complete
 async function getPlayersBlackList() {
-  let url = playerEndpoint + "?userFaceitId=" + localstorageUser;
-  blacklist = await genericGetRequest(url);
+
+  userId = await localstorageUser;
+  let url = playerEndpoint + "?userFaceitId=" + userId.faceitId;
+  debugger;
+  blacklist = genericGetRequest(url);
+
 }
 
 //Complete
 async function addPlayerBlackList(nickForBan) {
   nickForBan = nickForBan.split("\n");
-  if (!localstorageUser) {
+  debugger;
+  if (!userId) {
     getFaceitIdlocalStorage();
   }
   else {
     var data = {
       playerNickname: nickForBan[0],
-      userFaceitId: localstorageUser,
+      userFaceitId: userId.faceitId,
     }
 
     await genericUpsertRequest(playerEndpoint, "POST", data);
@@ -177,54 +221,57 @@ function getDivPlayers() {
     let resp = node.classList[0];
     return resp;
   }
-  return resp;
+  return "";
 }
 
 async function undoPlayerBlackList(undoPlayer) {
-  if (!localstorageUser) {
+  if (!userId) {
     getFaceitIdlocalStorage();
   }
   else {
     var data = {
       playerNickname: undoPlayer,
-      userFaceitId: localstorageUser,
+      userFaceitId: userId.faceitId,
     }
 
     await genericUpsertRequest(playerEndpoint, "PUT", data);
     getPlayersBlackList();
   }
 }
-
-
-
 /** Generic Http Requests */
 
 async function genericUpsertRequest(url, method, data) {
+  var data;
+  debugger
   await fetch(url, {
     method: method,
     body: JSON.stringify(data),
     headers: {
       'Content-Type': 'application/json'
     }
-  }).then((response) => response) // realmente preciso?
-    .then(async (response) => {
-      if (response.status == 200) {
-        return await response.json();
-      }
-      else {
-        console.log(response.status);
-      }
-    }).catch(error => {
-      console.log(error);
-    });
+  }).then(async (response) => {
+    if (response.status == 200) {
+      debugger;
+      console.log(response);
+      data = await response.json();
+    }
+    else {
+      console.log(response.status);
+    }
+  }).catch(error => {
+    console.log(error);
+  });
+  return data;
 }
+
 
 async function genericGetRequest(url) {
   await fetch(url)
     .then((response) => response)
     .then(async (response) => {
       if (response.status == 200) {
-        return await response.json();
+        var data = await response.json();
+        blacklist = data;
       }
       else {
         console.log(response.status);
