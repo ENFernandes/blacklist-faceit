@@ -5,6 +5,7 @@ const playerEndpoint = apiUrl + '/player';
 const playersNamesXpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]';
 
 let classDiv = "";
+
 var start;
 var fileContent;
 var localstorageUser;
@@ -16,6 +17,7 @@ var nameBan;
 Verify if the request is necessary
 */
 
+
 start = setInterval(() => {
   let url = window.document.URL;
   if (url === "https://www.faceit.com/pt/clan/61395179-2483-49c9-a9b2-dd251a5ca0e0/SAW%20Gaming%20League%20-%20Comunidade%20Portuguesa%20de%20CS:GO") {
@@ -23,6 +25,7 @@ start = setInterval(() => {
     clearInterval(start);
   }
 }, 10000);
+
 
 async function startup() {
   debugger
@@ -42,9 +45,11 @@ async function startup() {
 };
 
 async function postNicknameUser() {
+
   var userNickname = document.getElementsByClassName("nickname")[0].innerText;
   localstorageUser = genericUpsertRequest(userEndpoint, "POST", userNickname);
   userId = await localstorageUser;
+
 }
 
 async function setLocalStorage(data) {
@@ -182,10 +187,12 @@ setInterval(() => {
 
 //Complete
 async function getPlayersBlackList() {
+
   userId = await localstorageUser;
   let url = playerEndpoint + "?userFaceitId=" + userId.faceitId;
   debugger;
   blacklist = genericGetRequest(url);
+
 }
 
 //Complete
@@ -231,7 +238,6 @@ async function undoPlayerBlackList(undoPlayer) {
     getPlayersBlackList();
   }
 }
-
 /** Generic Http Requests */
 
 async function genericUpsertRequest(url, method, data) {
@@ -257,6 +263,7 @@ async function genericUpsertRequest(url, method, data) {
   });
   return data;
 }
+
 
 async function genericGetRequest(url) {
   await fetch(url)
