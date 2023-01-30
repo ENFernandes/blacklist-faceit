@@ -14,7 +14,11 @@ var nameBan;
 //TODO -> think a best solution
 start = setInterval(() => {
   let url = window.document.URL;
-  if (url.match(urlRegex).length == 1) {
+  let lengthUrlRegex;
+  if(url.match(urlRegex)!=null){
+  lengthUrlRegex = url.match(urlRegex).length;
+  }
+  if (lengthUrlRegex == 1) {
     startup()
     clearInterval(start);
   }
@@ -116,13 +120,14 @@ async function genericGetRequest(url) {
 
 //Complete
 function getDivPlayers() {
+  let resp;
   let result = document.evaluate(playersNamesXpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
   let node = result.singleNodeValue;
   if (node != null) {
-    let resp = node.classList[0];
+    resp = node.classList[0];
     return resp;
   }
-  return "";
+  return resp;
 }
 
 function changeNicknameColor(nickPlayer) {
