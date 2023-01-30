@@ -15,8 +15,7 @@
     "content_scripts": [
       {
           "matches": [
-            "https://www.faceit.com/*",
-            "https://www.faceit.com/pt/clan/61395179-2483-49c9-a9b2-dd251a5ca0e0/SAW%20Gaming%20League%20-%20Comunidade%20Portuguesa%20de%20CS:GO"
+            "https://www.faceit.com/*"
           ],
           "js": ["popup.js"],
           "run_at": "document_idle",

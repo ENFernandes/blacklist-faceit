@@ -3,6 +3,7 @@ const apiUrl = `https://blacklist-faceit-service-uat.onrender.com/api`;
 const userEndpoint = apiUrl + '/user';
 const playerEndpoint = apiUrl + '/player';
 const playersNamesXpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]';
+const urlRegex = /(https:\/\/)?(www.)?faceit.com\/([a-zA-Z]{2}(-)?([a-zA-Z]{2})?)\/clan\/(.*)/g;
 var classDiv = "";
 var start;
 var fileContent;
@@ -13,7 +14,7 @@ var nameBan;
 //TODO -> think a best solution
 start = setInterval(() => {
   let url = window.document.URL;
-  if (url === "https://www.faceit.com/pt/clan/61395179-2483-49c9-a9b2-dd251a5ca0e0/SAW%20Gaming%20League%20-%20Comunidade%20Portuguesa%20de%20CS:GO") {
+  if (url.match(urlRegex).length == 1) {
     startup()
     clearInterval(start);
   }
