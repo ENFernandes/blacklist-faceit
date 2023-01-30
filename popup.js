@@ -126,17 +126,19 @@ function getDivPlayers() {
 }
 
 function changeNicknameColor(nickPlayer) {
-  if (Object.keys(blacklist).length === 0) {
-    nickPlayer.style.color = 'white';
-  }
-  else {
-    for (const i of blacklist) {
-      if (i.nickname == nickPlayer.innerText) {
-        nickPlayer.style.color = 'red';
-        break;
-      }
-      else {
-        nickPlayer.style.color = 'white';
+  if (blacklist) {
+    if (Object.keys(blacklist).length === 0) {
+      nickPlayer.style.color = 'white';
+    }
+    else {
+      for (const i of blacklist) {
+        if (i.nickname == nickPlayer.innerText) {
+          nickPlayer.style.color = 'red';
+          break;
+        }
+        else {
+          nickPlayer.style.color = 'white';
+        }
       }
     }
   }
@@ -220,36 +222,38 @@ setInterval(() => {
       nameBan = exitElement.innerText;
       nameBan = nameBan.split("\n");
 
-      if (Object.keys(blacklist).length === 0) {
-
-        removeBtnUndo(exitElement);
-
-        var element = addBlacklist();
-
-        addBtnBlackList(element, exitElement);
-
-      }
-      else {
-        for (const playerBan of blacklist) {
-
-          if (playerBan.nickname === nameBan[0]) {
-
-            removeBtnBlacklist(exitElement);
-
-            var undoElement = undoPlayer();
-
-            addBtnUndo(undoElement, exitElement);
-            break;
+      if (blacklist) {
+        if (Object.keys(blacklist).length === 0) {
+  
+          removeBtnUndo(exitElement);
+  
+          var element = addBlacklist();
+  
+          addBtnBlackList(element, exitElement);
+  
+        }
+        else {
+          for (const playerBan of blacklist) {
+  
+            if (playerBan.nickname === nameBan[0]) {
+  
+              removeBtnBlacklist(exitElement);
+  
+              var undoElement = undoPlayer();
+  
+              addBtnUndo(undoElement, exitElement);
+              break;
+            }
+  
+            else {
+              removeBtnUndo(exitElement);
+  
+              var element = addBlacklist();
+  
+              addBtnBlackList(element, exitElement);
+            }
+  
           }
-
-          else {
-            removeBtnUndo(exitElement);
-
-            var element = addBlacklist();
-
-            addBtnBlackList(element, exitElement);
-          }
-
         }
       }
     })
