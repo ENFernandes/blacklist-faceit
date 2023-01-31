@@ -2,7 +2,7 @@
 const apiUrl = `https://blacklist-faceit-service-uat.onrender.com/api`;
 const userEndpoint = apiUrl + '/user';
 const playerEndpoint = apiUrl + '/player';
-const playersNamesXpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div[1]';
+const playersNamesXpath = '//*[@id="main-container-height-wrapper"]/div/div[2]/app-root-clan-main-react/div/div[2]/div[1]/div[2]/div[2]/div[2]/div[1]/div[3]/div[1]/div[1]/div';
 const urlRegex = /(https:\/\/)?(www.)?faceit.com\/([a-zA-Z]{2}(-)?([a-zA-Z]{2})?)\/clan\/(.*)/g;
 var classDiv = "";
 var start;
@@ -215,7 +215,7 @@ setInterval(() => {
 
 //Complete
 setInterval(() => {
-  if (classDiv == "") {
+  if (classDiv == "" || !classDiv) {
     classDiv = getDivPlayers();
   }
   else {
